@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define STRING_TOKENIZER_IMPL
 #include "string_tokenizer.h"
@@ -34,12 +36,16 @@ int main()
 void print_tokens(const char* str, const char* del)
 {
 	int token_count = 0;
-	char** tokens = tokenize(str, del, &token_count);
+
+	int len = strlen(str);
+	void* buffer = malloc(get_safe_allocation_size(len));
+
+	tokenize(buffer, str, del, &token_count);
 	printf("\"%s\" has #%d tokens\n", str, token_count);
 	for(int i=0; i<token_count; i++)
 	{
-		printf("token #%d : %s\n", i+1, tokens[i]);
+		printf("token #%d : %s\n", i+1, ((char**)buffer)[i]);
 	}
 
-	dispose_tokens(tokens, token_count);
+	//dispose_tokens(tokens, token_count);
 }

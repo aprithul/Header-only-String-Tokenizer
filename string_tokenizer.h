@@ -1,9 +1,9 @@
-#include <stdlib.h>
 #include <stdio.h>
 
-char** tokenize(const char* string, const char* delimiter, int* token_count);
+void tokenize(void* allocated_buffer, const char* string, const char* delimiter, int* token_count);
 void dispose_tokens(char** split_string_array, int token_count);
 int get_token_count(const char* string, const char* delimiter);
+unsigned int get_safe_allocation_size(int string_len);
 
 #ifdef STRING_TOKENIZER_IMPL
 #undef STRING_TOKENIZER_IMPL
@@ -14,27 +14,29 @@ int get_token_count(const char* string, const char* delimiter);
 
 int token_index_buffer[MAX_TOKEN_COUNT]; 
 
-char** tokenize(const char* string, const char* delimiter, int* token_count)
+void tokenize(void* allocated_buffer, const char* string, const char* delimiter, int* token_count)
 {
-	char** parsed_str = NULL;
 	*token_count = get_token_count(string, delimiter);
-	parsed_str = (char**)malloc(sizeof(char*) * (*token_count));
 
+	char** ptr_ptr = (char**)allocated_buffer; // store pointers to the char arrays in the first token_count char** addresses
+	char* ptr = (char*)((char**)allocated_buffer + (*token_count)); // store the actual char arrays after that
 	int prev = -1;
+
 	for(int i=0; i<(*token_count); i++)
 	{
 		int substr_buffer_len = token_index_buffer[i] - prev; // this will give a len one higher than substring len,
-								      // the +1 is for the '\0' character
-		parsed_str[i] = (char*)malloc(sizeof(char)*(substr_buffer_len)); 
-		parsed_str[i][substr_buffer_len-1] = '\0';
+															// the +1 is for the '\0' character
+		*ptr_ptr = ptr;
+		ptr_ptr++;
 
-		for(int j = prev+1, k = 0; j< prev + substr_buffer_len; j++, k++) // copy sub string
-			parsed_str[i][k] = string[j];
-	
+		for(int j = prev+1; j< prev + substr_buffer_len; j++, ptr++) // copy sub string
+			*ptr = string[j];
+
+		*ptr = '\0';
+		ptr++;
+
 		prev = token_index_buffer[i];
 	}
-
-	return parsed_str;
 }
 
 void dispose_tokens(char** token_array, int token_count)
@@ -67,5 +69,12 @@ int get_token_count(const char* string, const char* delimiter)
 	return token_cnt;
 }
 
+
+unsigned int get_safe_allocation_size(int string_len)
+{
+	// can have a max of string_len+1 tokens (when every character is a delimiter)
+	// can't have more than string_len different strings, each of which requires a '\0', so x2
+	return sizeof(char*)*(string_len+1) + sizeof(char)*string_len*2;
+}
 
 #endif
