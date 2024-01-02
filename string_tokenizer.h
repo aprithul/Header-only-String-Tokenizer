@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 void tokenize(void* allocated_buffer, const char* string, const char* delimiter, int* token_count);
 void dispose_tokens(char** split_string_array, int token_count);
